@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -39,13 +38,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile("encrypt.txt", dataEncriptada, 0644)
+	err = ioutil.WriteFile("encrypt.enc", dataEncriptada, 0644)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("%x\n", dataEncriptada)
+
+	//activar para comprobar desencriptar encriptacion de openssl
+
+	//	dataEncriptada, err = ioutil.ReadFile("opensll.enc")
+	//
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
 
 	dataDesencriptada, err := decrypt(dataEncriptada, privateKey)
 
@@ -140,11 +147,9 @@ func getPublicKey() (publicKey *rsa.PublicKey, err error) {
 
 func encrypt(dataOrigen []byte, publicKey *rsa.PublicKey) (dataEncriptada []byte, err error) {
 
-	label := []byte("OAEP Encrypted")
-
 	rng := rand.Reader
 
-	dataEncriptada, err = rsa.EncryptOAEP(sha256.New(), rng, publicKey, dataOrigen, label)
+	dataEncriptada, err = rsa.EncryptPKCS1v15(rng, publicKey, dataOrigen)
 
 	if err != nil {
 		return
@@ -155,11 +160,9 @@ func encrypt(dataOrigen []byte, publicKey *rsa.PublicKey) (dataEncriptada []byte
 
 func decrypt(dataEncriptada []byte, privateKey *rsa.PrivateKey) (dataDesencriptada []byte, err error) {
 
-	label := []byte("OAEP Encrypted")
-
 	rng := rand.Reader
 
-	dataDesencriptada, err = rsa.DecryptOAEP(sha256.New(), rng, privateKey, dataEncriptada, label)
+	dataDesencriptada, err = rsa.DecryptPKCS1v15(rng, privateKey, dataEncriptada)
 
 	if err != nil {
 		return
